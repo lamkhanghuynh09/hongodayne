@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Trang chủ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="container">
+        <h2>Chào, {{ username }}!</h2>
+        <p>💎 Kim cương: <strong>{{ diamonds }}</strong></p>
+
+        <div class="card recharge-form">
+            <h3>🕹️ Nạp thẻ game</h3>
+            <form method="POST" action="/recharge">
+                <select name="card_type" required>
+                    <option value="">--Chọn loại thẻ--</option>
+                    <option value="viettel">Viettel</option>
+                    <option value="mobifone">Mobifone</option>
+                    <option value="vinaphone">Vinaphone</option>
+                </select>
+
+                <select name="amount" required>
+                    <option value="">--Chọn mệnh giá--</option>
+                    <option value="10000">10.000 VNĐ</option>
+                    <option value="20000">20.000 VNĐ</option>
+                    <option value="50000">50.000 VNĐ</option>
+                    <option value="100000">100.000 VNĐ</option>
+                </select>
+
+                <input type="text" name="serial" placeholder="Số serial" required>
+                <input type="text" name="code" placeholder="Mã thẻ" required>
+                <button type="submit">Nạp ngay</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
