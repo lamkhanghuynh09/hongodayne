@@ -1,10 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, session
-import json, os
+import json
+import os
 
 app = Flask(__name__)
 app.secret_key = 'supersecret'  # Để dùng session
-USER_FILE = 'users.json'
 
+USER_FILE = 'users.json'
+RECHARGE_FILE = 'recharges.json'
+
+# ========== Helper: Load & Save ==========
 def load_users():
     try:
         with open(USER_FILE, 'r') as f:
@@ -16,6 +20,19 @@ def save_users(users):
     with open(USER_FILE, 'w') as f:
         json.dump(users, f, indent=4)
 
+def load_recharges():
+    try:
+        with open(RECHARGE_FILE, 'r') as f:
+            return json.load(f)
+    except:
+        return []
+
+def save_recharges(recharges):
+    with open(RECHARGE_FILE, 'w') as f:
+        json.dump(recharges, f, indent=4)
+
+# ========== Routes ==========
+
 @app.route('/')
 def index():
     msg = request.args.get('msg')
@@ -26,9 +43,16 @@ def index():
 def register():
     users = load_users()
     username = request.form['username']
+    password = request.form['password']
+
     if username in users:
         return redirect(url_for('index', msg='Tên đã tồn tại!', register=1))
-    users[username] = {'password': request.form['password'], 'diamonds': 0}
+
+    users[username] = {
+        'password': password,
+        'diamonds': 0,
+        'role': 'user'
+    }
     save_users(users)
     return redirect(url_for('index', msg='Đăng ký thành công!'))
 
@@ -38,8 +62,10 @@ def login():
     username = request.form['username']
     password = request.form['password']
     user = users.get(username)
+
     if user and user['password'] == password:
         session['username'] = username
+        session['role'] = user.get('role', 'user')
         return redirect(url_for('home'))
     return redirect(url_for('index', msg='Sai tài khoản hoặc mật khẩu'))
 
@@ -56,16 +82,51 @@ def home():
 def recharge():
     if 'username' not in session:
         return redirect('/')
-    users = load_users()
     username = session['username']
+    data = {
+        'username': username,
+        'card_type': request.form['card_type'],
+        'amount': int(request.form['amount']),
+        'serial': request.form['serial'],
+        'code': request.form['code']
+    }
+    recharges = load_recharges()
+    recharges.append(data)
+    save_recharges(recharges)
+    return redirect(url_for('home'))
+
+@app.route('/admin')
+def admin_panel():
+    if 'username' not in session or session.get('role') != 'admin':
+        return "⛔️ Bạn không có quyền truy cập", 403
+
+    recharges = load_recharges()
+    return render_template('admin.html', recharges=recharges)
+
+@app.route('/approve', methods=['POST'])
+def approve():
+    if 'username' not in session or session.get('role') != 'admin':
+        return "⛔️ Không được phép", 403
+
+    username = request.form['username']
     amount = int(request.form['amount'])
 
-    # Nạp thẻ = tặng kim cương
-    bonus = amount // 1000
-    users[username]['diamonds'] += bonus
-    save_users(users)
+    users = load_users()
+    if username in users:
+        users[username]['diamonds'] += amount // 1000
+        save_users(users)
 
-    return redirect(url_for('home'))
+    # Xoá giao dịch khỏi danh sách
+    recharges = load_recharges()
+    recharges = [r for r in recharges if not (r['username'] == username and r['amount'] == amount)]
+    save_recharges(recharges)
+
+    return redirect(url_for('admin_panel'))
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
 import os
 
 if __name__ == '__main__':
