@@ -1,1 +1,12 @@
-{}
+{
+  "admin": {
+    "password": "admin123",
+    "diamonds": 0,
+    "role": "admin"
+  },
+  "nguoidung1": {
+    "password": "123",
+    "diamonds": 5,
+    "role": "user"
+  }
+}
