@@ -1,51 +1,45 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
-import json, os
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, render_template, request, redirect, url_for
+import json
+import os
 
 app = Flask(__name__)
+USER_FILE = 'users.json'
 
-USERS_FILE = 'users.json'
+def load_users():
+    if os.path.exists(USER_FILE):
+        with open(USER_FILE, 'r') as f:
+            return json.load(f)
+    return {}
 
-def read_users():
-    if not os.path.exists(USERS_FILE):
-        return {}
-    with open(USERS_FILE, 'r') as f:
-        return json.load(f)
-
-def write_users(users):
-    with open(USERS_FILE, 'w') as f:
-        json.dump(users, f, indent=4)
+def save_users(users):
+    with open(USER_FILE, 'w') as f:
+        json.dump(users, f)
 
 @app.route('/')
-def home():
-    return render_template('index.html')
+def index():
+    show_register = request.args.get('register') == '1'
+    message = request.args.get('msg', '')
+    return render_template('index.html', message=message, show_register=show_register)
 
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.form
-    username = data['username']
-    password = data['password']
-    users = read_users()
-
+    username = request.form['username']
+    password = request.form['password']
+    users = load_users()
     if username in users:
-        return "Tài khoản đã tồn tại!", 409
-
-    users[username] = generate_password_hash(password)
-    write_users(users)
-    return redirect('/?msg=Đăng ký thành công!')
+        return redirect(url_for('index', register=1, msg='Tên đã tồn tại!'))
+    users[username] = password
+    save_users(users)
+    return redirect(url_for('index', msg='Đăng ký thành công!'))
 
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.form
-    username = data['username']
-    password = data['password']
-    users = read_users()
-
-    if username in users and check_password_hash(users[username], password):
-        return redirect('/?msg=Đăng nhập thành công!')
-    else:
-        return "Sai tài khoản hoặc mật khẩu", 401
-
+    username = request.form['username']
+    password = request.form['password']
+    users = load_users()
+    if users.get(username) == password:
+        return f'Chào mừng, {username}!'
+    return redirect(url_for('index', msg='Sai tài khoản hoặc mật khẩu'))
 import os
 
 if __name__ == '__main__':
