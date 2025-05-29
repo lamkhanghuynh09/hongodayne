@@ -81,5 +81,37 @@
             document.getElementById('success-message').style.display = 'block';
         }
     </script>
+    <script>
+  const userDiamonds = {{ diamonds }}; // Số kim cương hiện có từ Flask
+
+  document.getElementById('recharge-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const gameId = document.getElementById('game-id').value;
+    const amount = parseInt(document.getElementById('diamond-amount').value);
+
+    if (amount < 100) {
+      alert("Số kim cương tối thiểu để nạp là 100.");
+      return;
+    }
+
+    if (amount > userDiamonds) {
+      alert("Bạn không đủ kim cương để nạp.");
+      return;
+    }
+
+    // Hiển thị hóa đơn
+    document.getElementById('bill-id').innerText = gameId;
+    document.getElementById('bill-amount').innerText = amount;
+    document.getElementById('bill-modal').style.display = 'block';
+  });
+
+  function confirmRecharge() {
+    document.getElementById('bill-modal').style.display = 'none';
+    document.getElementById('success-message').style.display = 'block';
+
+    // Optional: gọi API Flask để trừ kim cương (bước 2)
+  }
+</script>
 </body>
 </html>
