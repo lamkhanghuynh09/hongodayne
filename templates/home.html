@@ -5,6 +5,31 @@
     <title>Trang chủ</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+        }
+        #success-message {
+            margin-top: 20px;
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            color: #155724;
+            font-weight: bold;
+            display: none;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
 <div class="container">
@@ -63,7 +88,7 @@
     </div>
 
     <!-- Thông báo thành công -->
-    <div id="success-message" style="display:none;">✅ Nạp thành công!</div>
+    <div id="success-message">✅ Nạp thành công!</div>
 </div>
 
 <script>
@@ -74,6 +99,11 @@
 
         const gameId = document.getElementById('game-id').value;
         const amount = parseInt(document.getElementById('diamond-amount').value);
+
+        if (!gameId || isNaN(amount)) {
+            alert("Vui lòng nhập đầy đủ thông tin.");
+            return;
+        }
 
         if (amount < 100) {
             alert("Tối thiểu 100 kim cương mới được nạp.");
@@ -87,43 +117,31 @@
 
         document.getElementById('bill-id').innerText = gameId;
         document.getElementById('bill-amount').innerText = amount;
-        document.getElementById('bill-modal').style.display = 'block';
+        document.getElementById('bill-modal').style.display = 'flex';
     });
 
     function confirmRecharge() {
-        document.getElementById('bill-modal').style.display = 'none';
-        document.getElementById('success-message').style.display = 'block';
+        const gameId = document.getElementById('bill-id').innerText;
+        const amount = parseInt(document.getElementById('bill-amount').innerText);
 
-        // (Có thể gửi request về server tại đây nếu cần xử lý backend)
+        fetch('/confirm_recharge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ game_id: gameId, amount: amount })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('bill-modal').style.display = 'none';
+                document.getElementById('success-message').innerText = '✅ Nạp thành công!';
+                document.getElementById('success-message').style.display = 'block';
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert(data.message || "Có lỗi xảy ra.");
+            }
+        })
+        .catch(err => alert("Lỗi mạng hoặc máy chủ."));
     }
 </script>
-   <script>
-  function confirmRecharge() {
-    const gameId = document.getElementById('bill-id').innerText;
-    const amount = document.getElementById('bill-amount').innerText;
-
-    fetch('/confirm_recharge', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        game_id: gameId,
-        amount: parseInt(amount)
-      })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        document.getElementById('bill-modal').style.display = 'none';
-        document.getElementById('success-message').innerText = 'Nạp thành công!';
-        document.getElementById('success-message').style.display = 'block';
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        alert(data.message);
-      }
-    });
-  }
-</script> 
 </body>
 </html>
