@@ -122,6 +122,29 @@ def approve():
     save_recharges(recharges)
 
     return redirect(url_for('admin_panel'))
+    @app.route("/confirm_recharge", methods=["POST"])
+def confirm_recharge():
+    if "username" not in session:
+        return jsonify({"success": False, "message": "Chưa đăng nhập"})
+
+    data = request.json
+    username = session["username"]
+    recharge_amount = int(data.get("amount", 0))
+
+    users = load_users()
+    if username not in users:
+        return jsonify({"success": False, "message": "Tài khoản không tồn tại"})
+
+    diamonds = users[username].get("diamonds", 0)
+    if recharge_amount < 100:
+        return jsonify({"success": False, "message": "Phải nạp tối thiểu 100 kim cương"})
+    if diamonds < recharge_amount:
+        return jsonify({"success": False, "message": "Không đủ kim cương"})
+
+    users[username]["diamonds"] -= recharge_amount
+    save_users(users)
+
+    return jsonify({"success": True, "new_diamonds": users[username]["diamonds"]})
 
 @app.route('/logout')
 def logout():
