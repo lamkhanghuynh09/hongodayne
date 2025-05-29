@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import json, os
 
 app = Flask(__name__)
@@ -111,6 +111,30 @@ def use_diamonds():
         return 'OK'
     return 'Không đủ kim cương', 400
 
+@app.route('/confirm_recharge', methods=['POST'])
+def confirm_recharge():
+    if 'username' not in session:
+        return jsonify({'success': False, 'message': 'Chưa đăng nhập.'})
+
+    data = request.get_json()
+    game_id = data.get('game_id')
+    amount = data.get('amount')
+
+    if not game_id or not amount:
+        return jsonify({'success': False, 'message': 'Thiếu thông tin nạp.'})
+
+    users = load_users()
+    username = session['username']
+
+    if users[username]['diamonds'] < amount:
+        return jsonify({'success': False, 'message': 'Không đủ kim cương.'})
+
+    # Trừ kim cương
+    users[username]['diamonds'] -= amount
+    save_users(users)
+
+    return jsonify({'success': True})
+
 @app.route('/admin')
 def admin_panel():
     if 'username' not in session or session['username'] != 'admin':
@@ -161,31 +185,7 @@ def approve_card():
         json.dump(cards, f, indent=4)
 
     return redirect(url_for('admin_panel'))
-    from flask import jsonify
 
-@app.route('/confirm_recharge', methods=['POST'])
-def confirm_recharge():
-    if 'username' not in session:
-        return jsonify({'success': False, 'message': 'Chưa đăng nhập.'})
-
-    data = request.get_json()
-    game_id = data.get('game_id')
-    amount = data.get('amount')
-
-    if not game_id or not amount:
-        return jsonify({'success': False, 'message': 'Thiếu thông tin nạp.'})
-
-    users = load_users()
-    username = session['username']
-
-    if users[username]['diamonds'] < amount:
-        return jsonify({'success': False, 'message': 'Không đủ kim cương.'})
-
-    # Trừ kim cương
-    users[username]['diamonds'] -= amount
-    save_users(users)
-
-    return jsonify({'success': True})
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # Render cung cấp PORT qua biến môi trường
+    port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
