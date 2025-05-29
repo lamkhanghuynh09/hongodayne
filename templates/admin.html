@@ -2,26 +2,50 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Admin</title>
+    <title>Trang quản trị</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
     <div class="container">
-        <h2>📋 Danh sách thẻ chờ duyệt</h2>
-        {% for r in recharges %}
-        <div class="card">
-            <p><strong>Người dùng:</strong> {{ r.username }}</p>
-            <p><strong>Loại thẻ:</strong> {{ r.card_type }}</p>
-            <p><strong>Mệnh giá:</strong> {{ r.amount }} VNĐ</p>
-            <p><strong>Serial:</strong> {{ r.serial }}</p>
-            <p><strong>Mã thẻ:</strong> {{ r.code }}</p>
-            <form method="POST" action="/approve">
-                <input type="hidden" name="username" value="{{ r.username }}">
-                <input type="hidden" name="amount" value="{{ r.amount }}">
-                <button type="submit">✅ Duyệt & cộng kim cương</button>
-            </form>
-        </div>
-        {% endfor %}
+        <h2>🎮 Quản trị viên</h2>
+        <p>Xin chào, admin!</p>
+
+        <h3>📥 Danh sách thẻ chờ duyệt</h3>
+        {% if cards %}
+            <table border="1" cellpadding="10">
+                <tr>
+                    <th>Người dùng</th>
+                    <th>Loại thẻ</th>
+                    <th>Mệnh giá</th>
+                    <th>Serial</th>
+                    <th>Mã thẻ</th>
+                    <th>Hành động</th>
+                </tr>
+                {% for card in cards %}
+                    {% if card.status == 'pending' %}
+                    <tr>
+                        <td>{{ card.username }}</td>
+                        <td>{{ card.type }}</td>
+                        <td>{{ card.amount }}</td>
+                        <td>{{ card.serial }}</td>
+                        <td>{{ card.code }}</td>
+                        <td>
+                            <form method="POST" action="/admin/approve">
+                                <input type="hidden" name="username" value="{{ card.username }}">
+                                <input type="hidden" name="amount" value="{{ card.amount }}">
+                                <input type="hidden" name="serial" value="{{ card.serial }}">
+                                <input type="hidden" name="code" value="{{ card.code }}">
+                                <button type="submit">✅ Duyệt</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>Không có thẻ nào.</p>
+        {% endif %}
     </div>
 </body>
 </html>
