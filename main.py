@@ -87,7 +87,12 @@ def recharge():
     }
 
     save_card(card_data)
-    return 'Thẻ đã gửi, chờ admin duyệt!'
+    return '''
+<script>
+    alert("Thẻ đã gửi, chờ admin duyệt!");
+    window.location.href = "/";
+</script>
+'''
 
 @app.route('/use_diamonds', methods=['POST'])
 def use_diamonds():
