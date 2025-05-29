@@ -97,5 +97,33 @@
         // (Có thể gửi request về server tại đây nếu cần xử lý backend)
     }
 </script>
+   <script>
+  function confirmRecharge() {
+    const gameId = document.getElementById('bill-id').innerText;
+    const amount = document.getElementById('bill-amount').innerText;
+
+    fetch('/confirm_recharge', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        game_id: gameId,
+        amount: parseInt(amount)
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('bill-modal').style.display = 'none';
+        document.getElementById('success-message').innerText = 'Nạp thành công!';
+        document.getElementById('success-message').style.display = 'block';
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        alert(data.message);
+      }
+    });
+  }
+</script> 
 </body>
 </html>
