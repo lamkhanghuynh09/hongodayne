@@ -1,43 +1,39 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-import json
-import os
+from flask import Flask, render_template, request, redirect, session, jsonify
+import json, os
 
 app = Flask(__name__)
-app.secret_key = 'supersecret'  # Để dùng session
+app.secret_key = 'your_secret_key'
 
 USER_FILE = 'users.json'
-RECHARGE_FILE = 'recharges.json'
+ADMIN_USERNAME = 'admin'
 
-# ========== Helper: Load & Save ==========
+# Helper functions
 def load_users():
-    try:
-        with open(USER_FILE, 'r') as f:
-            return json.load(f)
-    except:
+    if not os.path.exists(USER_FILE):
         return {}
+    with open(USER_FILE, 'r') as f:
+        return json.load(f)
 
 def save_users(users):
     with open(USER_FILE, 'w') as f:
         json.dump(users, f, indent=4)
 
-def load_recharges():
-    try:
-        with open(RECHARGE_FILE, 'r') as f:
-            return json.load(f)
-    except:
-        return []
-
-def save_recharges(recharges):
-    with open(RECHARGE_FILE, 'w') as f:
-        json.dump(recharges, f, indent=4)
-
-# ========== Routes ==========
-
+# Routes
 @app.route('/')
 def index():
-    msg = request.args.get('msg')
-    show_register = request.args.get('register') == '1'
-    return render_template('index.html', message=msg, show_register=show_register)
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    users = load_users()
+    username = request.form['username']
+    password = request.form['password']
+
+    if username in users and users[username]['password'] == password:
+        session['username'] = username
+        return redirect('/home')
+    else:
+        return 'Sai tài khoản hoặc mật khẩu'
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -46,33 +42,17 @@ def register():
     password = request.form['password']
 
     if username in users:
-        return redirect(url_for('index', msg='Tên đã tồn tại!', register=1))
+        return 'Tài khoản đã tồn tại'
 
-    users[username] = {
-        'password': password,
-        'diamonds': 0,
-        'role': 'user'
-    }
+    users[username] = {'password': password, 'diamonds': 0}
     save_users(users)
-    return redirect(url_for('index', msg='Đăng ký thành công!'))
-
-@app.route('/login', methods=['POST'])
-def login():
-    users = load_users()
-    username = request.form['username']
-    password = request.form['password']
-    user = users.get(username)
-
-    if user and user['password'] == password:
-        session['username'] = username
-        session['role'] = user.get('role', 'user')
-        return redirect(url_for('home'))
-    return redirect(url_for('index', msg='Sai tài khoản hoặc mật khẩu'))
+    return redirect('/')
 
 @app.route('/home')
 def home():
     if 'username' not in session:
         return redirect('/')
+
     users = load_users()
     username = session['username']
     diamonds = users[username].get('diamonds', 0)
@@ -82,74 +62,50 @@ def home():
 def recharge():
     if 'username' not in session:
         return redirect('/')
-    username = session['username']
-    data = {
-        'username': username,
+    
+    card_data = {
+        'username': session['username'],
         'card_type': request.form['card_type'],
-        'amount': int(request.form['amount']),
+        'amount': request.form['amount'],
         'serial': request.form['serial'],
         'code': request.form['code']
     }
-    recharges = load_recharges()
-    recharges.append(data)
-    save_recharges(recharges)
-    return redirect(url_for('home'))
 
-@app.route('/admin')
-def admin_panel():
-    if 'username' not in session or session.get('role') != 'admin':
-        return "⛔️ Bạn không có quyền truy cập", 403
+    # Lưu vào file admin duyệt
+    with open('pending_cards.json', 'a') as f:
+        f.write(json.dumps(card_data) + '\n')
 
-    recharges = load_recharges()
-    return render_template('admin.html', recharges=recharges)
+    return 'Đã gửi thẻ thành công, chờ admin duyệt! <a href="/home">Quay lại</a>'
 
-@app.route('/approve', methods=['POST'])
-def approve():
-    if 'username' not in session or session.get('role') != 'admin':
-        return "⛔️ Không được phép", 403
-
-    username = request.form['username']
-    amount = int(request.form['amount'])
-
-    users = load_users()
-    if username in users:
-        users[username]['diamonds'] += amount // 1000
-        save_users(users)
-
-    # Xoá giao dịch khỏi danh sách
-    recharges = load_recharges()
-    recharges = [r for r in recharges if not (r['username'] == username and r['amount'] == amount)]
-    save_recharges(recharges)
-
-    return redirect(url_for('admin_panel'))
-    @app.route("/confirm_recharge", methods=["POST"])
+@app.route('/confirm_recharge', methods=['POST'])
 def confirm_recharge():
-    if "username" not in session:
-        return jsonify({"success": False, "message": "Chưa đăng nhập"})
+    if 'username' not in session:
+        return jsonify({'success': False, 'message': 'Chưa đăng nhập'})
 
     data = request.json
-    username = session["username"]
-    recharge_amount = int(data.get("amount", 0))
+    amount = int(data.get('amount', 0))
+    username = session['username']
 
     users = load_users()
     if username not in users:
-        return jsonify({"success": False, "message": "Tài khoản không tồn tại"})
+        return jsonify({'success': False, 'message': 'Tài khoản không tồn tại'})
 
-    diamonds = users[username].get("diamonds", 0)
-    if recharge_amount < 100:
-        return jsonify({"success": False, "message": "Phải nạp tối thiểu 100 kim cương"})
-    if diamonds < recharge_amount:
-        return jsonify({"success": False, "message": "Không đủ kim cương"})
+    diamonds = users[username].get('diamonds', 0)
 
-    users[username]["diamonds"] -= recharge_amount
+    if amount < 100:
+        return jsonify({'success': False, 'message': 'Tối thiểu phải nạp 100 kim cương'})
+    if amount > diamonds:
+        return jsonify({'success': False, 'message': 'Không đủ kim cương'})
+
+    users[username]['diamonds'] -= amount
     save_users(users)
 
-    return jsonify({"success": True, "new_diamonds": users[username]["diamonds"]})
+    return jsonify({'success': True, 'new_diamonds': users[username]['diamonds']})
 
 @app.route('/logout')
 def logout():
-    session.clear()
-    return redirect(url_for('index'))
+    session.pop('username', None)
+    return redirect('/')
 import os
 
 if __name__ == '__main__':
