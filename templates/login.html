@@ -2,18 +2,42 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Đăng nhập</title>
+    <title>Đăng nhập / Đăng ký</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <div class="container">
-        <h2>Đăng nhập</h2>
-        <form method="POST" action="/login">
+<div class="container">
+    <h1>Welcome</h1>
+    {% if message %}
+        <p class="message">{{ message }}</p>
+    {% endif %}
+    <div class="form-box">
+        <form method="POST" action="/login" class="form" id="login-form" {% if show_register %}style="display:none;"{% endif %}>
+            <h2>Đăng nhập</h2>
             <input type="text" name="username" placeholder="Tên đăng nhập" required>
             <input type="password" name="password" placeholder="Mật khẩu" required>
             <button type="submit">Đăng nhập</button>
+            <p class="switch">Chưa có tài khoản? <a href="#" onclick="toggleForm()">Đăng ký</a></p>
         </form>
-        <p>Chưa có tài khoản? <a href="/register_page">Đăng ký</a></p>
+
+        <form method="POST" action="/register" class="form" id="register-form" {% if not show_register %}style="display:none;"{% endif %}>
+            <h2>Đăng ký</h2>
+            <input type="text" name="username" placeholder="Tên đăng nhập" required>
+            <input type="password" name="password" placeholder="Mật khẩu" required>
+            <button type="submit">Đăng ký</button>
+            <p class="switch">Đã có tài khoản? <a href="#" onclick="toggleForm()">Đăng nhập</a></p>
+        </form>
     </div>
+</div>
+
+<script>
+    function toggleForm() {
+        document.getElementById('login-form').style.display =
+            document.getElementById('login-form').style.display === 'none' ? 'block' : 'none';
+        document.getElementById('register-form').style.display =
+            document.getElementById('register-form').style.display === 'none' ? 'block' : 'none';
+    }
+</script>
 </body>
 </html>
