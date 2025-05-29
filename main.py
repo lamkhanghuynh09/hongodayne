@@ -88,7 +88,11 @@ def index():
         diamonds = users[username]['diamonds']
         return render_template('home.html', username=username, diamonds=diamonds)
     return redirect(url_for('login'))
-
+    
+@app.route('/register_page')
+def register_page():
+    return render_template('register.html')
+    
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
