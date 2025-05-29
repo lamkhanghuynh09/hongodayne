@@ -1,14 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import json, os
 
 app = Flask(__name__)
 app.secret_key = 'secret_key'
 
-# Đường dẫn file
 USERS_FILE = 'users.json'
 CARDS_FILE = 'cards.json'
 
-# Load dữ liệu từ file JSON
 def load_users():
     if os.path.exists(USERS_FILE):
         with open(USERS_FILE, 'r') as f:
@@ -91,7 +89,6 @@ def recharge():
     save_card(card_data)
     return 'Thẻ đã gửi, chờ admin duyệt!'
 
-# API (nếu muốn xử lý nạp kim cương từ client gửi về)
 @app.route('/use_diamonds', methods=['POST'])
 def use_diamonds():
     if 'username' not in session:
@@ -104,8 +101,35 @@ def use_diamonds():
         save_users(users)
         return 'OK'
     return 'Không đủ kim cương', 400
-import os
 
+# ✅ Route xử lý xác nhận nạp ID game (trừ kim cương)
+@app.route('/confirm_recharge', methods=['POST'])
+def confirm_recharge():
+    if 'username' not in session:
+        return jsonify({'success': False, 'message': 'Bạn chưa đăng nhập.'})
+
+    data = request.get_json()
+    game_id = data.get('game_id')
+    amount = data.get('amount')
+
+    if not game_id or not amount:
+        return jsonify({'success': False, 'message': 'Thiếu thông tin.'})
+
+    if amount < 100:
+        return jsonify({'success': False, 'message': 'Tối thiểu 100 kim cương.'})
+
+    users = load_users()
+    username = session['username']
+    user = users.get(username)
+
+    if user['diamonds'] < amount:
+        return jsonify({'success': False, 'message': 'Bạn không đủ kim cương.'})
+
+    # Trừ kim cương thật
+    user['diamonds'] -= amount
+    save_users(users)
+
+    return jsonify({'success': True})
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  # Render cung cấp PORT qua biến môi trường
     app.run(host='0.0.0.0', port=port)
