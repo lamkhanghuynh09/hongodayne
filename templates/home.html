@@ -7,138 +7,95 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <div class="container">
-        <h2>Chào, {{ username }}!</h2>
-        <p>💎 Kim cương: <strong>{{ diamonds }}</strong></p>
+<div class="container">
+    <h2>Chào, {{ username }}!</h2>
+    <p>💎 Kim cương hiện có: <strong id="diamond-count">{{ diamonds }}</strong></p>
 
-        <div class="card recharge-form">
-            <h3>🕹️ Nạp thẻ game</h3>
-            <form method="POST" action="/recharge">
-                <select name="card_type" required>
-                    <option value="">--Chọn loại thẻ--</option>
-                    <option value="viettel">Viettel</option>
-                    <option value="mobifone">Mobifone</option>
-                    <option value="vinaphone">Vinaphone</option>
-                </select>
+    <!-- Form nạp thẻ -->
+    <div class="card recharge-form">
+        <h3>🕹️ Nạp thẻ game</h3>
+        <form method="POST" action="/recharge">
+            <select name="card_type" required>
+                <option value="">--Chọn loại thẻ--</option>
+                <option value="viettel">Viettel</option>
+                <option value="mobifone">Mobifone</option>
+                <option value="vinaphone">Vinaphone</option>
+            </select>
 
-                <select name="amount" required>
-                    <option value="">--Chọn mệnh giá--</option>
-                    <option value="10000">10.000 VNĐ 95kc</option>
-                    <option value="20000">20.000 VNĐ 185kc</option>
-                    <option value="50000">50.000 VNĐ 215kc</option>
-                    <option value="100000">100.000 VNĐ 1.745kc</option>
-                    <option value="200000">200.000 VNĐ 3.900kc</option>
-                </select>
+            <select name="amount" required>
+                <option value="">--Chọn mệnh giá--</option>
+                <option value="10000">10.000 VNĐ (95 kc)</option>
+                <option value="20000">20.000 VNĐ (185 kc)</option>
+                <option value="50000">50.000 VNĐ (215 kc)</option>
+                <option value="100000">100.000 VNĐ (1.745 kc)</option>
+                <option value="200000">200.000 VNĐ (3.900 kc)</option>
+            </select>
 
-                <input type="text" name="serial" placeholder="Số serial" required>
-                <input type="text" name="code" placeholder="Mã thẻ" required>
-                <button type="submit">Nạp ngay</button>
-            </form>
-        </div>
-
-        <div class="card recharge-box">
-            <h3>💎 Nạp kim cương</h3>
-            <form id="recharge-form">
-                <input type="text" id="game-id" placeholder="Nhập ID game" required>
-                <select id="diamond-amount" required>
-                    <option value="" disabled selected>Chọn số kim cương</option>
-                    <option value="100">100 kim cương</option>
-                    <option value="200">200 kim cương</option>
-                    <option value="500">500 kim cương</option>
-                </select>
-                <button type="submit">Nạp kim cương</button>
-            </form>
-        </div>
-
-        <!-- Modal -->
-        <div id="bill-modal" style="display:none;" class="modal">
-            <div class="modal-content">
-                <h3>Hóa đơn thanh toán</h3>
-                <p>ID game: <span id="bill-id"></span></p>
-                <p>Số kim cương: <span id="bill-amount"></span></p>
-                <button onclick="confirmRecharge()">Xác nhận thanh toán</button>
-            </div>
-        </div>
-
-        <!-- Thông báo -->
-        <div id="success-message" style="display:none;">Nạp thành công!</div>
+            <input type="text" name="serial" placeholder="Số serial" required>
+            <input type="text" name="code" placeholder="Mã thẻ" required>
+            <button type="submit">Nạp ngay</button>
+        </form>
     </div>
 
-    <!-- JavaScript xử lý nạp kim cương -->
-    <script>
-        document.getElementById('recharge-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const gameId = document.getElementById('game-id').value;
-            const amount = document.getElementById('diamond-amount').value;
+    <!-- Nạp kim cương bằng ID game -->
+    <div class="card recharge-form">
+        <h3>💎 Nạp kim cương vào ID game</h3>
+        <form id="recharge-form">
+            <input type="text" id="game-id" placeholder="Nhập ID game" required>
+            <select id="diamond-amount" required>
+                <option value="" disabled selected>Chọn số kim cương</option>
+                <option value="100">100 kim cương</option>
+                <option value="200">200 kim cương</option>
+                <option value="500">500 kim cương</option>
+            </select>
+            <button type="submit">Nạp kim cương</button>
+        </form>
+    </div>
 
-            document.getElementById('bill-id').innerText = gameId;
-            document.getElementById('bill-amount').innerText = amount;
-            document.getElementById('bill-modal').style.display = 'block';
-        });
+    <!-- Bảng hóa đơn -->
+    <div id="bill-modal" style="display:none;" class="modal">
+        <div class="modal-content">
+            <h3>🧾 Hóa đơn thanh toán</h3>
+            <p>ID game: <span id="bill-id"></span></p>
+            <p>Số kim cương: <span id="bill-amount"></span></p>
+            <button onclick="confirmRecharge()">Xác nhận thanh toán</button>
+        </div>
+    </div>
 
-        function confirmRecharge() {
-            document.getElementById('bill-modal').style.display = 'none';
-            document.getElementById('success-message').style.display = 'block';
+    <!-- Thông báo thành công -->
+    <div id="success-message" style="display:none;">✅ Nạp thành công!</div>
+</div>
+
+<script>
+    const availableDiamonds = {{ diamonds }};
+
+    document.getElementById('recharge-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const gameId = document.getElementById('game-id').value;
+        const amount = parseInt(document.getElementById('diamond-amount').value);
+
+        if (amount < 100) {
+            alert("Tối thiểu 100 kim cương mới được nạp.");
+            return;
         }
-    </script>
-    <script>
-  const userDiamonds = {{ diamonds }}; // Số kim cương hiện có từ Flask
 
-  document.getElementById('recharge-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const gameId = document.getElementById('game-id').value.trim();
-    const amount = parseInt(document.getElementById('diamond-amount').value);
+        if (amount > availableDiamonds) {
+            alert("Bạn không đủ kim cương để nạp số lượng này.");
+            return;
+        }
 
-    if (!gameId) {
-      alert("Vui lòng nhập ID game.");
-      return;
-    }
-    if (isNaN(amount)) {
-      alert("Vui lòng chọn số kim cương.");
-      return;
-    }
-    if (amount < 100) {
-      alert("Số kim cương tối thiểu để nạp là 100.");
-      return;
-    }
-    if (amount > userDiamonds) {
-      alert("Bạn không đủ kim cương để nạp.");
-      return;
-    }
+        document.getElementById('bill-id').innerText = gameId;
+        document.getElementById('bill-amount').innerText = amount;
+        document.getElementById('bill-modal').style.display = 'block';
+    });
 
-    // Hiển thị hóa đơn
-    document.getElementById('bill-id').innerText = gameId;
-    document.getElementById('bill-amount').innerText = amount;
-    document.getElementById('bill-modal').style.display = 'block';
-  });
-
-  function confirmRecharge() {
-    const amount = parseInt(document.getElementById('bill-amount').innerText);
-
-    fetch("/confirm_recharge", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ amount: amount })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
+    function confirmRecharge() {
         document.getElementById('bill-modal').style.display = 'none';
         document.getElementById('success-message').style.display = 'block';
-        alert("Nạp thành công! Số kim cương còn lại: " + data.new_diamonds);
-        location.reload();  // Reload trang để cập nhật số kim cương mới
-      } else {
-        alert("Lỗi: " + data.message);
-      }
-    })
-    .catch(err => {
-      alert("Đã có lỗi xảy ra, vui lòng thử lại.");
-      console.error(err);
-    });
-  }
+
+        // (Có thể gửi request về server tại đây nếu cần xử lý backend)
+    }
 </script>
 </body>
 </html>
