@@ -26,6 +26,59 @@ def save_card(data):
     cards.append(data)
     with open(CARDS_FILE, 'w') as f:
         json.dump(cards, f, indent=4)
+from flask import render_template
+
+@app.route('/admin', methods=['GET'])
+def admin_panel():
+    if 'username' not in session or session['username'] != 'admin':
+        return 'Bạn không có quyền truy cập!', 403
+
+    if os.path.exists(CARDS_FILE):
+        with open(CARDS_FILE, 'r') as f:
+            cards = json.load(f)
+    else:
+        cards = []
+
+    return render_template('admin.html', cards=cards)
+
+@app.route('/admin/approve', methods=['POST'])
+def approve_card():
+    if 'username' not in session or session['username'] != 'admin':
+        return 'Không có quyền!', 403
+
+    username = request.form['username']
+    amount = int(request.form['amount'])
+    serial = request.form['serial']
+    code = request.form['code']
+
+    # Xử lý cộng kim cương
+    users = load_users()
+    if username in users:
+        # Giả sử 1000 VNĐ = 10 KC, hoặc bạn có thể điều chỉnh theo bảng mệnh giá
+        kc_map = {
+            10000: 95,
+            20000: 185,
+            50000: 215,
+            100000: 1745,
+            200000: 3900
+        }
+        kc = kc_map.get(amount, 0)
+        users[username]['diamonds'] += kc
+        save_users(users)
+
+    # Cập nhật trạng thái thẻ
+    with open(CARDS_FILE, 'r') as f:
+        cards = json.load(f)
+
+    for card in cards:
+        if card['serial'] == serial and card['code'] == code:
+            card['status'] = 'approved'
+            break
+
+    with open(CARDS_FILE, 'w') as f:
+        json.dump(cards, f, indent=4)
+
+    return redirect(url_for('admin_panel'))
 
 @app.route('/')
 def index():
