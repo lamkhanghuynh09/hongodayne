@@ -35,6 +35,51 @@
                 <button type="submit">Nạp ngay</button>
             </form>
         </div>
+
+        <div class="card recharge-box">
+            <h3>💎 Nạp kim cương</h3>
+            <form id="recharge-form">
+                <input type="text" id="game-id" placeholder="Nhập ID game" required>
+                <select id="diamond-amount" required>
+                    <option value="" disabled selected>Chọn số kim cương</option>
+                    <option value="100">100 kim cương</option>
+                    <option value="200">200 kim cương</option>
+                    <option value="500">500 kim cương</option>
+                </select>
+                <button type="submit">Nạp kim cương</button>
+            </form>
+        </div>
+
+        <!-- Modal -->
+        <div id="bill-modal" style="display:none;" class="modal">
+            <div class="modal-content">
+                <h3>Hóa đơn thanh toán</h3>
+                <p>ID game: <span id="bill-id"></span></p>
+                <p>Số kim cương: <span id="bill-amount"></span></p>
+                <button onclick="confirmRecharge()">Xác nhận thanh toán</button>
+            </div>
+        </div>
+
+        <!-- Thông báo -->
+        <div id="success-message" style="display:none;">Nạp thành công!</div>
     </div>
+
+    <!-- JavaScript xử lý nạp kim cương -->
+    <script>
+        document.getElementById('recharge-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const gameId = document.getElementById('game-id').value;
+            const amount = document.getElementById('diamond-amount').value;
+
+            document.getElementById('bill-id').innerText = gameId;
+            document.getElementById('bill-amount').innerText = amount;
+            document.getElementById('bill-modal').style.display = 'block';
+        });
+
+        function confirmRecharge() {
+            document.getElementById('bill-modal').style.display = 'none';
+            document.getElementById('success-message').style.display = 'block';
+        }
+    </script>
 </body>
 </html>
